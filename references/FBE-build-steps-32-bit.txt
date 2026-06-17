@@ -1,0 +1,180 @@
+# 32-bit firmware build process
+
+# Prepare necessary files
+$ rm -rf CNSS.PS.* IPQ6018.ILQ.* WLAN.BL.* IPQ5018.ILQ.* IPQ8074.ILQ.* NSS.FW.*
+IPQ9574.ILQ.* WLAN.HK.* TZ.WNS.4.0 BOOT.BF.* BTFW.MAPLE.* BOOT.XF.0.3 TZ.WNS.5.1
+RPM.BF.2.4.1 TMEL.WNS.1.0 TZ.BF.*
+$ cp -rf */* .
+$ umask 022
+
+
+# Repo init
+$ mkdir -p ~/bin
+$ curl -o ~/bin/repo https://storage.googleapis.com/git-repo-downloads/repo
+$ chmod a+x ~/bin/repo
+$ export PATH="$HOME/bin:$PATH"
+$ hash -r
+$ repo init \
+  -u https://git.codelinaro.org/clo/qsdk/releases/manifest/qstak \
+  -b release \
+  -m AU_LINUX_QSDK_NHSS.QSDK.12.5_TARGET_ALL.12.5.2783.2987.xml \
+  --repo-url=https://gerrit.googlesource.com/git-repo \
+  --repo-rev=stable \
+  --no-clone-bundle
+
+# Repo sync
+$ sed -i 's/remote="qclo"/remote="clo"/g'
+.repo/manifests/AU_LINUX_QSDK_NHSS.QSDK.12.5_TARGET_ALL.12.5.2783.2987.xml
+$ repo sync -j8 --no-tags -qc
+$ mkdir -p qsdk/dl
+$ cp -rf apss_proc/out/proprietary/Wifi/qsdk-qca-wifi/* qsdk
+$ cp -rf apss_proc/out/proprietary/Wifi/qsdk-qca-wlan/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/meta-tools/ .
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/common-tools/* qsdk/
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/qca-lib/* qsdk/
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/qca-mcs-apps/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/qca-qmi-framework/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/gpio-debug/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/qca-diag/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/qca-cnss-daemon/* qsdk
+$ cp -rf apss_proc/out/proprietary/qca-diag-bin/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/athtestcmd/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/fw-qca-stats/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/qsdk-qca-athdiag/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/nss-prop-user/* qsdk
+$ cp -rf apss_proc/out/proprietary/Hyfi/qsdk-ieee1905-security/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/minidump/* qsdk
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/qca-afcsec-bin/* qsdk/
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/qca-pkgmgr-bin/* qsdk/
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/qca-prov-src/* qsdk/
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/qca-native-bin/* qsdk/
+$ rm -rfv qsdk/qca/feeds/qca/utils/ctrl_app_dut​
+$ cp -rf apss_proc/out/proprietary/RBIN-SOFTSKU/qca-softsku-bin/* qsdk
+
+# Change AFC
+$ cp -rf apss_proc/out/proprietary/RBIN-AFCAgent/qca-afc-bin/* qsdk
+$ cp -rf apss_proc/out/proprietary/RBIN-AFCAgent/qti_provisioning/* qsdk
+$ cd qsdk/qca/feeds/afc
+$ find -maxdepth 1 ! -name qti-mfg-provision ! -name qti-encrypt ! -name . -exec rm
+-rv {} \;
+
+$ cd ../../../../
+$ mkdir -pv qsdk/staging_dir/target-arm/usr/lib/
+$ cd qsdk/prebuilt/ipq53xx_32/ipq_premium
+$ cp -fv ./libprovision.so ../../../staging_dir/target-arm/usr/lib/
+$ cd ../../../../
+$ mkdir -p qsdk/staging_dir/target-arm/pkginfo/
+$ touch qsdk/staging_dir/target-arm/pkginfo/qti-mfg-provision.provides
+$ echo libprovision.so >
+qsdk/staging_dir/target-arm/pkginfo/qti-mfg-provision.provides
+
+# Apply HyFI and WHC packages
+$ cp -rf apss_proc/out/proprietary/Hyfi/hyfi/* qsdk
+$ cp -rf apss_proc/out/proprietary/Hyfi/qsdk-whc/* qsdk
+$ mkdir qsdk/qca/feeds/qca-son-mem-debug/qca-son-mem-debug
+$ mv qsdk/qca/feeds/qca-son-mem-debug/Makefile
+qsdk/qca/feeds/qca-son-mem-debug/Config.in
+qsdk/qca/feeds/qca-son-mem-debug/qca-son-mem-debug
+$ cp -rf apss_proc/out/proprietary/Hyfi/qsdk-whcpy/* qsdk
+
+# Local directory qsdk is now created
+
+# Applying patches
+# patches/ will be placed in the same directory.
+# Use `quilt push -a`
+
+# Make some files executable
+$ chmod a+x ./qsdk/package/base-files/files/etc/rc.local
+$ chmod a+x ./qsdk/package/base-files/files/etc/set-eth01.sh​
+$ chmod a+x ./qsdk/package/base-files/files/sbin/rgb_pwm.sh​
+$ chmod a+x ./qsdk/package/base-files/files/sbin/poestat
+
+# Update OpenWrt git urls to the mirrors
+# Note: Some sources in the feeds.conf.default are not updated to mirror
+# with these commands. Update them too
+$ sed -i 's|git.openwrt.org/project/luci.git|github.com/openwrt/luci.git|g'
+feeds.conf
+$ sed -i 's|git.openwrt.org/feed/packages.git|github.com/openwrt/packages.git|g'
+feeds.conf.default
+$ sed -i 's|git.openwrt.org/feed/routing.git|github.com/openwrt/routing.git|g'
+feeds.conf.default
+
+
+# Creating the QSDK build
+$ cd qsdk
+
+# Install feeds
+$ ./scripts/feeds update -a
+$ ./scripts/feeds install -a -f
+
+# Copy base configuration for the build
+$ cp qca/configs/qsdk/ipq_premium.config .config
+$ sed -i 's/TARGET_ipq95xx_generic/TARGET_ipq53xx_ipq53xx_32/g' .config
+$ sed -i 's/TARGET_ipq95xx/TARGET_ipq53xx/g' .config
+$ cp -rf prebuilt/ipq53xx_32/ipq_premium/* prebuilt/ipq53xx_32/
+
+# Enable EZMESH configuration
+$ echo "CONFIG_EZMESH_ALG_SOURCE=n" >> .config
+#EZMESH package (Full Mode)
+$ echo "CONFIG_PACKAGE_whc-mesh=n" >> .config
+$ echo "CONFIG_PACKAGE_hyfi-mesh=n" >> .config
+$ echo "CONFIG_PACKAGE_whc-map=y" >> .config
+$ echo "CONFIG_PACKAGE_hyfi-map=y" >> .config
+#Additional configuration to enable EZMESH packages:
+$ echo "CONFIG_PACKAGE_qca-ezmesh-cmn=y" >> .config
+$ echo "CONFIG_PACKAGE_qca-ezmesh=y" >> .config
+$ echo "CONFIG_PACKAGE_qca-ezmesh-alg=y" >> .config
+$ echo "CONFIG_PACKAGE_qca-ezmesh-ctrl=n" >> .config
+$ echo "CONFIG_PACKAGE_qca-ezmesh-agent=n" >> .config
+$ echo "CONFIG_PACKAGE_qca-ezmesh-agentalg=n" >> .config
+$ echo "CONFIG_PACKAGE_qca-ezmesh-alg-static=n" >> .config
+$ echo CONFIG_BUILD_SHORTENED_PATH=y >> .config
+
+# Regenerate complete config and start the build
+$ make defconfig
+$ make V=s
+
+# Check build files are generated in qsdk/bin/ directory. For example, the following or similar files:
+openwrt-ipq53xx*.elf (ELF files for U-Boot variants)
+openwrt-ipq-ipq53xx-squashfs-root.img (SquashFS)
+openwrt-ipq-ipq53xx-qcom_mixx-fit-uImage.itb (ITB)
+
+# Finally, generate a single firmware image to be flashed to the router
+# Switch to Qualcomm code working directory (qsdk/ parent dir)
+
+# Copy the prebuilt image and configuration to common/build
+$ mkdir -p common/build/ipq_x64
+$ mkdir -p apss_proc/out/meta-scripts
+$ cp qsdk/qca/src/u-boot-2016/tools/pack_v2.py apss_proc/out/meta-scripts/
+$ sed -i 's#</linux_root_path>#/</linux_root_path>#' contents.xml
+$ sed -i 's#</windows_root_path>#\\</windows_root_path>#' contents.xml
+$ cp qsdk/bin/targets/ipq53xx/generic/openwrt* common/build/ipq_x64
+# Copy the saved openwrt-ipq53*-u-boot*.elf from the 32‐bit build to common/build/ipq_x64
+
+$ cp
+../ipq5321-networking-2024-spf-12-5_csu1-32bit//qsdk/bin/targets/ipq53xx/ipq53xx_32/openwrt-ipq53*-u-boot*.elf common/build/ipq_x64/
+$ cp -rf apss_proc/out/proprietary/QSDK-Base/meta-tools apss_proc/out/
+$ cp qsdk/staging_dir/host/bin/mkimage apss_proc/out/meta-tools/
+$ cp -rf qsdk/bin/targets/ipq53xx/generic/dtbs/* common/build/ipq_x64/
+$ cp -rf skales/* common/build/ipq_x64/
+$ cp qsdk/staging_dir/host/bin/ubinize common/build/ipq_x64/
+$ cp -rf WLAN.WBE*/wlan_proc/build/ms/bin/*/FW_IMAGES/* common/build/ipq_x64/
+$ cp -rf TMEL.WNS*/patch/signed/tmel-ipq53xx-patch.elf common/build/ipq_x64/
+
+# Create the single images
+#For IPQ53xx + QCN64xx customers ==================
+$ sed -i.bak
+'s#wifi_fw_ipq5332_qcn9224_v2_qcn9160_squashfs.img#wifi_fw_ipq5332_qcn9224_v2_single_
+dualmac_squashfs.img#g' ../../apss_proc/out/meta-tools/ipq5332/config.xml
+$ sed -i.bak
+'s#wifi_fw_ipq5332_qcn9224_v2_qcn6432_qcn9160_squashfs.img#wifi_fw_ipq5332_qcn6432_sq
+uashfs.img#g' ../../apss_proc/out/meta-tools/ipq5332/config.xml
+$ sed -i.bak
+'s#wifi_fw_ipq5332_qcn6432cs_qcn9160_squashfs.img#wifi_fw_ipq5332_qcn6432_squashfs.im
+g#g' ../../apss_proc/out/meta-tools/ipq5332/config.xml
+#==================================================
+$ export BLD_ENV_BUILD_ID=P
+$ python update_common_info.py 64
+
+# Verify the following image exist in common/build/bin
+norplusnand-ipq5332_64-single.img

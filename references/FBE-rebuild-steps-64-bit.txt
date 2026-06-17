@@ -1,0 +1,37 @@
+# 64-bit firmware rebuild process (with patches)
+
+# Apply patches
+$ quilt push -a
+
+# Clean and re-setup staging
+# For 32-bit build
+$ cd qsdk
+$ make clean
+$ mkdir -pv staging_
+dir/target-arm/usr/lib/
+$ cp -fv prebuilt/ipq53xx_32/ipq_premium/libprovision.so staging_dir/target-arm/usr/lib/
+$ mkdir -p staging_dir/target-arm/pkginfo/
+$ touch staging_dir/target-arm/pkginfo/qti-mfg-provision.provides
+$ echo libprovision.so > staging_dir/target-arm/pkginfo/qti-mfg-provision.provides
+
+# For 64-bit build
+$ cd qsdk
+$ make clean
+$ mkdir -pv staging_dir/target-aarch64/usr/lib/
+$ cp -fv prebuilt/ipq53xx_generic/ipq_premium/libprovision.so staging_dir/target-aarch64/usr/lib/
+$ mkdir -p staging_dir/target-aarch64/pkginfo/
+$ touch staging_dir/target-aarch64/pkginfo/qti-mfg-provision.provides
+$ echo libprovision.so > staging_dir/target-aarch64/pkginfo/qti-mfg-provision.provides
+
+# Build
+$ make V=s
+
+# If only modifying Linux kernel source code or configurations
+# We can rebuild the linux kernel without the cleanup `make clean`
+$ cd qsdk
+$ make target/linux/compile V=s
+$ make target/linux/install V=s
+
+
+# Regenerate the single firmware image
+
