@@ -10,3 +10,7 @@ Registry of all wiki pages, grouped by category. One line per page.
 - [FBE 64-bit Build](fbe-build-64-bit.md) — build the primary aarch64 firmware on the `generic` target.
 - [FBE Single-Image Generation (64-bit)](fbe-single-image.md) — assemble the flashable `norplusnand-ipq5332_64-single.img` from the 64-bit build plus the 32-bit U-Boot.
 - [FBE Firmware Rebuild](fbe-rebuild.md) — reuse a prepared workspace to recompile after patches/source edits (full or incremental kernel rebuild).
+
+## WhyFi IPQ5321 — CI/CD
+
+- [WhyFi IPQ5321 — Build Environment and CI/CD Design](whyfi-ipq5321-ci-cd-design.md) — proposed `whyfi-ipq5321` product repo, vendor-seed + overlay config model, package-path pipeline, and GitHub-artifact transport to the HITL router.

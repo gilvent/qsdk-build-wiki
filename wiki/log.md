@@ -14,3 +14,8 @@
 - Pages: updated wiki/fbe-single-image.md.
 - Sources: verified against the already-built workspace ../ipq5321-networking-2024-spf-12-5_csu1-64bit (sed -i.bak left config.xml.bak at apss_proc/out/meta-tools/ipq5332/, update_common_info.py resides in common/build/).
 - Notes: The `../../apss_proc/...config.xml` paths are not a bug. The final block (config.xml seds + update_common_info.py) executes from common/build/, so `../../apss_proc` resolves to the workspace-root apss_proc/ — confirmed by the .bak location and applied substitution. Made the `cd common/build` step explicit and removed the inconsistency caveat.
+
+## [2026-11-11] QUERY | Design a reproducible build environment and CI/CD pipeline for the WhyFi IPQ5321 firmware
+- Pages: created wiki/whyfi-ipq5321-ci-cd-design.md; added a "WhyFi IPQ5321 — CI/CD" category to wiki/index.md.
+- Sources: references/FBE-build-steps-64-bit.txt (lines 29–85, 108–135); references/FBE-build-steps-32-bit.txt (lines 111–114); references/FBE-rebuild-steps-64-bit.txt (lines 1–37); https://docs.github.com/en/actions/tutorials/store-and-share-data.
+- Notes: Design proposal. The repo layout, classification rules, and package selection are design decisions with no reference behind them; the page says so. Machine observations (feeds.conf src-links, 717 ipks in bin/) were taken from the 64-bit workspace on 2026-11-11.
